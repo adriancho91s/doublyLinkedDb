@@ -27,6 +27,8 @@ typedef struct {
     char name[30];
 } FileNode;
 
+
+
 struct node *findNodeAtPosition(struct node **first, int position);
 
 void print(struct node **first, int order);
@@ -37,7 +39,8 @@ void addNodeInOrder(struct node **first, char name[30], char surname[30], char p
 void deleteList(struct node **first);
 int getKey();
 void navigateDatabase(struct node **first);
-int editContact(struct node **first, char name[30], char surname[30]);
+struct node *binarySearch(struct node **first, char name[30], char surname[30]);
+void editContact(struct node **contactToEdit);
 
 int main() {
     struct node *first = NULL;
@@ -95,22 +98,25 @@ int main() {
                     break;
                 }
                 printf("You are going to edit a contact\n");
-                char nameToFind[30];
-                char surnameToFind[30];
+                char * nameToFind = (char *) malloc(30 * sizeof(char));
+                char * surnameToFind = (char *) malloc(30 * sizeof(char));
                 printf("Enter the name: ");
+                fgetc(stdin);
                 scanf("%s", name);
                 printf("Enter the surname: ");
+                fgetc(stdin);
                 scanf("%s", surname);
-                int isSuccess = editContact(&first, nameToFind, surnameToFind);
-                if (isSuccess == 0) {
+                struct node *temp = binarySearch(&first, name, surname);
+                if (temp == NULL) {
                     printf("The contact was not found\n");
                     delay();
                     break;
                 }
-                printf("The contact was edited successfully\n");
+                editContact(&temp);
                 printf("Press enter to continue\n");
-                fflush(stdin);
                 fgetc(stdin);
+                free(nameToFind);
+                free(surnameToFind);
                 break;
             case 4:
                 clearScreen();
@@ -349,6 +355,46 @@ void print(struct node **first, int order) {
 
 }
 
+int comparteString(char string1[30], char string2[30]) {
+    int i = 0;
+    for (i = 0; i < 30; i++) {
+        printf("String1: %c\n", string1[i]);
+        printf("String2: %c\n", string2[i]);
+        if (string1[i] != string2[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/*
+ * Binary search in the linked list
+ * @param first The pointer to the pointer of the first node in the linked list
+ * @param name The name of the contact to find
+ * @param surname The surname of the contact to find
+ * @return struct node* The node found in the linked list
+ * */
+struct node *binarySearch(struct node **first, char name[30], char surname[30]) {
+    int left = 0;
+    int right = counterNodes(first) - 1;
+    int middle;
+    struct node *temp = *first;
+    while (left <= right) {
+        middle = left + (right - left) / 2;
+        temp = findNodeAtPosition(first, middle + 1);
+        int surnameComparison = strcmp(temp->surname, surname);
+        int nameComparison = strcmp(temp->name, name);
+        if ((surnameComparison == 0) && (nameComparison == 0)) {
+            return temp;
+        } else if (surnameComparison < 0 || (surnameComparison == 0 && nameComparison < 0)) {
+            left = middle + 1;
+        } else {
+            right = middle - 1;
+        }
+    }
+    return NULL;
+}
+
 /*
  * Edit a contact in the linked list finding it by name and surname
  * @param first The pointer to the pointer of the first node in the linked list
@@ -356,15 +402,10 @@ void print(struct node **first, int order) {
  * @param surname The surname of the contact to edit
  * @return void
  * */
-int editContact(struct node **first, char name[30], char surname[30]){
-    struct node *temp = *first;
-    int option;
-    // search the contact using
-    if (temp == NULL) {
-        printf("The contact was not found\n");
-        delay();
-        return 0;
-    }
+void editContact(struct node **contactToEdit){
+    fflush(stdin);
+    int option = 0;
+    struct node *temp = *contactToEdit;
     do {
         clearScreen();
         printf("Choose the field to edit\n");
@@ -398,14 +439,12 @@ int editContact(struct node **first, char name[30], char surname[30]){
                 scanf("%s", temp->email);
                 break;
             case 6:
-                return 1;
                 break;
             default:
                 printf("Invalid option\n");
                 break;
         }
     } while (option != 6);
-    return 1;
 }
 
 /*
